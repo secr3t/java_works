@@ -247,18 +247,6 @@ public class SampleController implements Initializable {
 	}
 	public String getContent() {
 		WebElement content = otherDriver.findElement(By.xpath("//*[@id=\"IHBoard\"]/div/div[2]/div[2]"));
-//		scrollIntoView(otherDriver, content);
-//		String contents = (String) runScript(otherDriver, "return arguments[0].innerText", content);
-//		System.out.println("innerText :" + contents);
-//		contents = (String) runScript(otherDriver, "return arguments[0].innerHTML", content);
-//		System.out.println("innerHTML : " + contents);
 		return content.getText();
 	}
-	/*
-	@Override
-	public void finalize() {
-		adminDriver.close();
-		otherDriver.close();
-	}
-	*/
 }
