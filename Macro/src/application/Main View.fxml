@@ -18,17 +18,22 @@
    <center>
       <Pane prefHeight="100.0" prefWidth="500.0" BorderPane.alignment="CENTER">
          <children>
-            <Button fx:id="run" layoutX="44.0" layoutY="36.0" mnemonicParsing="false" text="실행" textAlignment="CENTER">
+            <Button fx:id="run" layoutX="196.0" layoutY="37.0" mnemonicParsing="false" text="실행" textAlignment="CENTER" textFill="#2000ff">
                <font>
                   <Font name="System Bold" size="14.0" />
                </font>
             </Button>
-            <Button fx:id="stop" layoutX="105.0" layoutY="36.0" mnemonicParsing="false" text="중지" textAlignment="CENTER">
+            <Button fx:id="stop" layoutX="257.0" layoutY="37.0" mnemonicParsing="false" text="중지" textAlignment="CENTER" textFill="RED">
                <font>
                   <Font name="System Bold" size="14.0" />
                </font>
             </Button>
             <Button fx:id="exit" layoutX="410.0" layoutY="39.0" mnemonicParsing="false" text="종료" />
+            <Button fx:id="login" layoutX="29.0" layoutY="29.0" mnemonicParsing="false" prefHeight="43.0" prefWidth="101.0" text="로그인">
+               <font>
+                  <Font size="20.0" />
+               </font>
+            </Button>
          </children>
       </Pane>
    </center>
@@ -59,6 +64,18 @@
                   </AnchorPane>
             </content>
           </Tab>
+            <Tab text="게시판 설정">
+               <content>
+                  <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <TextField fx:id="copyMax" layoutX="154.0" layoutY="8.0" />
+                        <TextField fx:id="copyMin" layoutX="154.0" layoutY="40.0" />
+                        <Label layoutX="14.0" layoutY="12.0" text="최대 번호" />
+                        <Label layoutX="14.0" layoutY="43.0" text="최소 번호" />
+                     </children>
+                  </AnchorPane>
+               </content>
+            </Tab>
         </tabs>
       </TabPane>
    </top>
