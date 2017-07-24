@@ -23,11 +23,12 @@
                   <Font name="System Bold" size="14.0" />
                </font>
             </Button>
-            <Button fx:id="stop" layoutX="394.0" layoutY="36.0" mnemonicParsing="false" text="중지" textAlignment="CENTER">
+            <Button fx:id="stop" layoutX="105.0" layoutY="36.0" mnemonicParsing="false" text="중지" textAlignment="CENTER">
                <font>
                   <Font name="System Bold" size="14.0" />
                </font>
             </Button>
+            <Button fx:id="exit" layoutX="410.0" layoutY="39.0" mnemonicParsing="false" text="종료" />
          </children>
       </Pane>
    </center>

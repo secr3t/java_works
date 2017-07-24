@@ -5,6 +5,7 @@ import java.util.ResourceBundle;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -15,6 +16,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 
 public class SampleController implements Initializable {
 	@FXML private TextField adminId;
@@ -23,12 +25,14 @@ public class SampleController implements Initializable {
 	@FXML private TextField otherPw;
 	@FXML private Button run;
 	@FXML private Button stop;
-	private static WebDriver adminDriver;
-	private static WebDriver otherDriver;
+	@FXML private Button exit;
+	public static WebDriver adminDriver;
+	public static WebDriver otherDriver;
 	public static Dimension windowSize;
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		System.setProperty("webdriver.chrome.driver", "src/chromedriver.exe");
 		loadAdmin();
 		setAdminURL();
 		loadOther();
@@ -39,6 +43,7 @@ public class SampleController implements Initializable {
 	public void binding() {
 		bindRun();
 		bindStop();
+		bindExit();
 	}
 
 	public void bindRun() {
@@ -53,12 +58,29 @@ public class SampleController implements Initializable {
 	public void bindStop() {
 //		stop.setOnAction();
 	}
+	public void bindExit() {
+		exit.setOnAction(e->{
+				try {
+					exitBtn(e);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+		});
+	}
 	public void startBtn(ActionEvent e) throws InterruptedException {
 		if(!adminIdIsNull())
 			adminLogin();
 	}
 	public void stopBtn(ActionEvent e) throws InterruptedException {
 		
+	}
+	
+	public void exitBtn(ActionEvent e) throws InterruptedException {
+		adminDriver.quit();
+		otherDriver.quit();
+		Stage stage = (Stage) exit.getScene().getWindow();
+		stage.close();
 	}
 	
 	public void loadAdmin() {
@@ -78,7 +100,12 @@ public class SampleController implements Initializable {
 	public void adminLogin() {
 		adminDriver.findElement(By.cssSelector("#login_id")).sendKeys(adminId.getText());
 		adminDriver.findElement(By.cssSelector("#login_pass")).sendKeys(adminPw.getText());
-		adminDriver.findElement(By.cssSelector("#login-wrap > form > button")).click();
+		try {
+			adminDriver.findElement(By.cssSelector("#login-wrap > form > button")).click();
+		} catch (Exception e) {
+			runScript(adminDriver, "arguments[0].scrollIntoView(true)", adminDriver.findElement(By.cssSelector("#login-wrap > form > button")));
+			adminDriver.findElement(By.cssSelector("#login-wrap > form > button")).click();
+		}
 //		adminDriver.findElement(By.cssSelector("#id")).sendKeys(adminId.getText());
 //		adminDriver.findElement(By.cssSelector("#pw")).sendKeys(adminPw.getText());
 //		adminDriver.findElement(By.cssSelector("#frmNIDLogin > fieldset > span > input[type=\"submit\"]")).click();
@@ -90,8 +117,8 @@ public class SampleController implements Initializable {
 	}
 	
 	public void setAdminURL() {
-//		adminDriver.get("http://www.815asiabet.com/admin/index.php");
-		adminDriver.get("https://www.naver.com");
+		adminDriver.get("http://www.815asiabet.com/admin/index.php");
+//		adminDriver.get("https://www.naver.com");
 	}
 	
 	public void setOtherURL() {
@@ -123,6 +150,12 @@ public class SampleController implements Initializable {
 			return false;
 	}
 	
+	public void runScript(WebDriver driver, String script, WebElement target) {
+		/*
+		 * to run script shorter
+		*/
+		((JavascriptExecutor) driver).executeScript(script, target);
+	}
 	/*
 	@Override
 	public void finalize() {
