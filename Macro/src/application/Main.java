@@ -13,7 +13,6 @@ public class Main extends Application {
 	public void start(Stage primaryStage) {
 		try {
 			Parent root = FXMLLoader.load(getClass().getResource("Main View.fxml"));
-//			BorderPane root = (BorderPane)FXMLLoader.load(getClass().getResource("Main View.fxml"));
 			Scene scene = new Scene(root,500,250);
 			primaryStage.setTitle("CopyCat");
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
