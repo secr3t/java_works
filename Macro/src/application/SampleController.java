@@ -134,7 +134,6 @@ public class SampleController implements Initializable {
 							continue;
 						}
 					} // 게시판 글 긁어오기 완료.
-					
 					if(!running)
 						this.stop();
 				}
@@ -144,7 +143,7 @@ public class SampleController implements Initializable {
 				int index = 0;
 				@Override
 				public void run() {
-					while(running) {
+					while(true) {
 						if(index < writes.size()) {
 							writeMain(writes.get(index));
 							try {
@@ -155,6 +154,8 @@ public class SampleController implements Initializable {
 							}
 							index++;
 						}
+						if(!running)
+							this.stop();
 					}
 				}
 
@@ -163,7 +164,7 @@ public class SampleController implements Initializable {
 			Thread thread3 = new Thread() {
 				int index = 0;
 				public void run() {
-					while(running) {
+					while(true) {
 						if(index < writes.size()) {
 							Writer w;
 							w = writes.get(index);
@@ -172,8 +173,9 @@ public class SampleController implements Initializable {
 							ta.setText(value);
 							index++;
 						}
+						if(!running)
+							this.stop();
 					}
-					this.stop();
 				}
 			};
 			thread3.start();
