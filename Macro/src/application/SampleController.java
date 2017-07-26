@@ -1,11 +1,11 @@
 package application;
 
+//import java.io.File;
+//import java.io.IOException;
 import java.net.URL;
+//import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.Vector;
@@ -20,6 +20,8 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 
+//import com.google.common.io.Files;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -28,7 +30,6 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.PasswordField;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -54,6 +55,9 @@ public class SampleController implements Initializable {
 	private final String postBack = "&page=1&db=freeboard";			//page = n --> n is reply page number
 	private org.openqa.selenium.Alert alert;
 	private Vector<Writer> writes = new Vector<>();
+//	private final String title = "_subject.value";
+//	private final String content = "_content.value";
+//	private final String comment = "_comment.value";
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		System.setProperty("webdriver.chrome.driver", "src/chromedriver.exe");
@@ -121,7 +125,7 @@ public class SampleController implements Initializable {
 				public void run() {
 					int min = Integer.parseInt(copyMin.getText());
 					int max = Integer.parseInt(copyMax.getText());
-					for(current=min; current <max && running; current++) {
+					for(current=min; current <=max && running; current++) {
 						movePage(current);
 						try {
 						writes.add(getDetail());
@@ -131,14 +135,34 @@ public class SampleController implements Initializable {
 						}
 					} // 게시판 글 긁어오기 완료.
 					
-					
+					if(!running)
+						this.stop();
 				}
 			};
 			thread.start();
 			Thread thread2 = new Thread() {
 				int index = 0;
 				@Override
-/*				public void run() {
+				public void run() {
+					while(running) {
+						if(index < writes.size()) {
+							writeMain(writes.get(index));
+							try {
+								writeComment(writes.get(index));
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							index++;
+						}
+					}
+				}
+
+			};
+			thread2.start();
+			Thread thread3 = new Thread() {
+				int index = 0;
+				public void run() {
 					while(running) {
 						if(index < writes.size()) {
 							Writer w;
@@ -149,17 +173,10 @@ public class SampleController implements Initializable {
 							index++;
 						}
 					}
-				}*/
-				public void run() {
-					while(running) {
-						if(writes.size() > 1) {
-							writeMain(writes.get(0));
-						}
-					}
+					this.stop();
 				}
-
 			};
-			thread2.start();
+			thread3.start();
 	}
 	public void stop(ActionEvent e) throws InterruptedException {
 		running = false;
@@ -270,9 +287,17 @@ public class SampleController implements Initializable {
 		    }
 		});
 	}
+//	public void writeMain(Writer w) throws IOException  {
+//		adminDriver.get("http://www.815asiabet.com/admin/board_write.php?sitename=CityOfDream&tn=board");
+//		String writingJs = Files.toString(new File("src/write.js"), Charset.forName("utf-8"));
+//		writingJs = setTitle(writingJs, w.getTitle());
+//		writingJs = setContent(writingJs, w.getContent());
+//		setWriterLevel(w.getLevel());
+//		((JavascriptExecutor) adminDriver).executeScript(writingJs);
+//	}
 	
 	public void writeMain(Writer w) {
-		adminDriver.get("ttp://www.815asiabet.com/admin/board_write.php?sitename=CityOfDream&tn=board");
+		adminDriver.get("http://www.815asiabet.com/admin/board_write.php?sitename=CityOfDream&tn=board");
 		setTitle(w.getTitle());
 		setWriterLevel(w.getLevel());
 		setContent(w.getContent());
@@ -284,11 +309,39 @@ public class SampleController implements Initializable {
 			scrollIntoView(adminDriver, submit);
 			submit.click();
 		}
+		try {
 		alert = adminDriver.switchTo().alert();
 		alert.accept();
+		} catch (Exception e) {
+			System.out.println("alert창이 없음");
+		}
 		adminDriver.switchTo().defaultContent();
 	}
-	
+	public void writeComment(Writer w) throws InterruptedException {
+		ArrayList<Replier> r = w.getReps();
+		for(int i = 0; i<r.size();i++) {
+		WebElement topTopic = 
+		adminDriver.findElement(By.cssSelector("#sub_content > div > table > tbody > tr:nth-child(18) > td:nth-child(2) > nobr > a"));
+		scrollIntoView(adminDriver, topTopic);
+		topTopic.click();
+		WebElement comment = adminDriver.findElement(By.cssSelector("#comment"));
+		scrollIntoView(adminDriver, comment);
+		comment.clear();
+		comment.sendKeys(r.get(i).getContent());
+		Thread.sleep(200);
+		String url = adminDriver.getCurrentUrl();
+		String value = url.split("b_key=")[1];
+		value = value.split("&")[0];
+		((JavascriptExecutor) adminDriver).executeScript("Javascript:BoardReplyWrite(" + value +")");
+		try {
+			alert = adminDriver.switchTo().alert();
+			alert.accept();
+			} catch (Exception e) {
+				System.out.println("alert창이 없음");
+			}
+			adminDriver.switchTo().defaultContent();
+		}
+	}
 	public Writer getDetail() {
 		Writer writer = new Writer();
 		writer.setTitle(getTitle());
@@ -339,14 +392,6 @@ public class SampleController implements Initializable {
 		return content.getText();
 	}
 	
-	public void setTitle(String title) {
-		try {
-		adminDriver.findElement(By.cssSelector("#b_subject")).sendKeys(title);
-		} catch (ElementNotSelectableException e) {
-			scrollIntoView(adminDriver, adminDriver.findElement(By.cssSelector("#b_subject")));
-			adminDriver.findElement(By.cssSelector("#b_subject")).sendKeys(title);
-		}
-	}
 	public void setWriterLevel(int level) {
 		WebElement select = 
 		adminDriver.findElement(By.cssSelector("#b_writer"));
@@ -360,6 +405,14 @@ public class SampleController implements Initializable {
 			option.click();
 		}
 	}
+	public void setTitle(String title) {
+		try {
+			adminDriver.findElement(By.cssSelector("#b_subject")).sendKeys(title);
+		} catch (ElementNotSelectableException e) {
+			scrollIntoView(adminDriver, adminDriver.findElement(By.cssSelector("#b_subject")));
+			adminDriver.findElement(By.cssSelector("#b_subject")).sendKeys(title);
+		}
+	}
 	public void setContent(String content) {
 		adminDriver.switchTo().frame(adminDriver.findElement(By.cssSelector("#sub_content > "
 				+ "div > table > tbody > tr:nth-child(7) > td:nth-child(2) > div.cleditorMain > iframe")));
@@ -371,4 +424,10 @@ public class SampleController implements Initializable {
 		}
 		adminDriver.switchTo().defaultContent();
 	}
+//	public String setTitle(String js, String replace) {
+//		return js.replace(title, replace);
+//	}
+//	public String setContent(String js, String replace) {
+//		return js.replace(content, replace);
+//	}
 }
