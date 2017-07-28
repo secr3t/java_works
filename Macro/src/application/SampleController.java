@@ -1,14 +1,11 @@
 package application;
 
-//import java.io.File;
-//import java.io.IOException;
 import java.net.URL;
-//import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.ResourceBundle;
-import java.util.Vector;
+import java.util.concurrent.SynchronousQueue;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -20,7 +17,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 
-//import com.google.common.io.Files;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -50,14 +46,64 @@ public class SampleController implements Initializable {
 	private WebDriver adminDriver;
 	private WebDriver otherDriver;
 	private Dimension windowSize;
-	private boolean running = true;
 	private final String postFront = "http://alltoto99.com/Service/Board/View.asp?BF_IDX=";	//IDX + postNumber
 	private final String postBack = "&page=1&db=freeboard";			//page = n --> n is reply page number
 	private org.openqa.selenium.Alert alert;
-	private Vector<Writer> writes = new Vector<>();
-//	private final String title = "_subject.value";
-//	private final String content = "_content.value";
-//	private final String comment = "_comment.value";
+	private SynchronousQueue<Writer> writeQueue = new SynchronousQueue<>();
+	private static boolean flag = true;
+	public void suspending() {
+		flag = false;
+		System.out.println("플래그 상태" + flag);
+	}
+	public void resuming() {
+		flag = true;
+		System.out.println("플래그 상태" +flag);
+	}
+	gettingThread t1 = new gettingThread();
+	settingThread t2 = new settingThread();
+	
+	class gettingThread extends Thread {
+		@Override
+		public void run() {
+			int min = Integer.parseInt(copyMin.getText());
+			int max = Integer.parseInt(copyMax.getText());
+			while(true) {
+				System.out.println("실행상태" + flag);
+				for(current=min; current <=max && flag; current++) {
+					movePage(current);
+					try {
+					writeQueue.put(getDetail());
+					} catch (NotFoundException | InterruptedException e) {
+						System.out.println("글이 없음");
+						continue;
+					}
+				} // 게시판 글 긁어오기 완료.
+			}
+		}
+	}
+	
+	class settingThread extends Thread{
+		@Override
+		public void run() {
+			while(true) {
+				System.out.println("실행상태" + flag);
+				while(flag) {
+					Writer writer = writeQueue.poll();
+						if(writer == null)
+							continue;
+						else {
+							writeMain(writer);
+								try {
+									writeComment(writer);
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								}
+						}
+					}
+				}
+			}
+	}
+	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		System.setProperty("webdriver.chrome.driver", "src/chromedriver.exe");
@@ -91,7 +137,6 @@ public class SampleController implements Initializable {
 			try {
 				stop(e);
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		});
@@ -101,7 +146,6 @@ public class SampleController implements Initializable {
 				try {
 					exit(e);
 				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 		});
@@ -111,7 +155,6 @@ public class SampleController implements Initializable {
 			try {
 				login(e);
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		});
@@ -119,69 +162,36 @@ public class SampleController implements Initializable {
 	
 	// to prevent blocking UI while run use Threads
 	public void start(ActionEvent e) throws InterruptedException {
-		running = true;
-			Thread thread = new Thread() {
-				@Override
-				public void run() {
-					int min = Integer.parseInt(copyMin.getText());
-					int max = Integer.parseInt(copyMax.getText());
-					for(current=min; current <=max && running; current++) {
-						movePage(current);
-						try {
-						writes.add(getDetail());
-						} catch (NotFoundException e) {
-							System.out.println("글이 없음");
-							continue;
-						}
-					} // 게시판 글 긁어오기 완료.
-					if(!running)
-						this.stop();
-				}
-			};
-			thread.start();
-			Thread thread2 = new Thread() {
-				int index = 0;
-				@Override
-				public void run() {
-					while(true) {
-						if(index < writes.size()) {
-							writeMain(writes.get(index));
-							try {
-								writeComment(writes.get(index));
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							index++;
-						}
-						if(!running)
-							this.stop();
-					}
-				}
 
-			};
-			thread2.start();
-			Thread thread3 = new Thread() {
-				int index = 0;
-				public void run() {
-					while(true) {
-						if(index < writes.size()) {
-							Writer w;
-							w = writes.get(index);
-							String value = ta.getText();
-							value = current + " 번 " + w.toString()+"\n" + value;
-							ta.setText(value);
-							index++;
-						}
-						if(!running)
-							this.stop();
-					}
-				}
-			};
-			thread3.start();
+		if(!t1.isAlive() && !t2.isAlive()) {
+			t1.start();
+			t2.start();
+		}
+		else
+		{
+			resuming();
+		}
+//			Thread thread3 = new Thread() {
+//				int index = 0;
+//				public void run() {
+//					while(true) {
+//						if(index < writes.size()) {
+//							Writer w;
+//							w = writes.get(index);
+//							String value = ta.getText();
+//							value = current + " 번 " + w.toString()+"\n" + value;
+//							ta.setText(value);
+//							index++;
+//						}
+//						if(!running)
+//							this.stop();
+//					}
+//				}
+//			};
+//			thread3.start();
 	}
 	public void stop(ActionEvent e) throws InterruptedException {
-		running = false;
+		suspending();
 	}
 	public void exit(ActionEvent e) throws InterruptedException {
 		adminDriver.quit();
@@ -241,7 +251,6 @@ public class SampleController implements Initializable {
 	
 	public void setAdminURL() {
 		adminDriver.get("http://www.815asiabet.com/admin/index.php");
-//		adminDriver.get("https://www.naver.com");
 	}
 	public void setOtherURL() {
 		otherDriver.get("http://alltoto99.com/Login.asp");
@@ -426,10 +435,4 @@ public class SampleController implements Initializable {
 		}
 		adminDriver.switchTo().defaultContent();
 	}
-//	public String setTitle(String js, String replace) {
-//		return js.replace(title, replace);
-//	}
-//	public String setContent(String js, String replace) {
-//		return js.replace(content, replace);
-//	}
 }
