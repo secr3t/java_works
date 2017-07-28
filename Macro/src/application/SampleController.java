@@ -1,5 +1,9 @@
 package application;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +20,7 @@ import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-
+import org.openqa.selenium.support.ui.Select;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -51,6 +55,14 @@ public class SampleController implements Initializable {
 	private org.openqa.selenium.Alert alert;
 	private SynchronousQueue<Writer> writeQueue = new SynchronousQueue<>();
 	private static boolean flag = true;
+	private BufferedReader reader;
+	private FileReader fileReader;
+	private ArrayList<String> list1 = new ArrayList<>();
+	private ArrayList<String> list2 = new ArrayList<>();
+	private ArrayList<String> list3 = new ArrayList<>();
+	private ArrayList<String> list4 = new ArrayList<>();
+	private ArrayList<String> list5 = new ArrayList<>();
+	
 	public void suspending() {
 		flag = false;
 		System.out.println("플래그 상태" + flag);
@@ -106,6 +118,12 @@ public class SampleController implements Initializable {
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		try {
+			parsing();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		System.setProperty("webdriver.chrome.driver", "src/chromedriver.exe");
 		loadAdmin();
 		setAdminURL();
@@ -114,6 +132,7 @@ public class SampleController implements Initializable {
 		binding();
 		run.setDisable(true);
 		stop.setDisable(true);
+		System.out.println(list1);
 	}
 
 	public void binding() {
@@ -407,13 +426,20 @@ public class SampleController implements Initializable {
 		WebElement select = 
 		adminDriver.findElement(By.cssSelector("#b_writer"));
 		Random rand = new Random();
-		WebElement option = 
-				select.findElement(By.xpath("//option[contains(text(),'" + level +"_"+ (rand.nextInt(3)+1) + "')]"));
+		Select option = new Select(select);
+		String value = new String();
+		switch(level) {
+		case 1: value = list1.get(rand.nextInt(list1.size()));
+		case 2: value = list2.get(rand.nextInt(list2.size()));
+		case 3: value = list3.get(rand.nextInt(list3.size()));
+		case 4: value = list4.get(rand.nextInt(list4.size()));
+		case 5: value = list5.get(rand.nextInt(list5.size()));
+		}
 		try {
-				option.click();
+				option.selectByValue(value);
 		}catch (ElementNotSelectableException e) {
-			scrollIntoView(adminDriver, option);
-			option.click();
+			scrollIntoView(adminDriver, select);
+			option.selectByValue(value);
 		}
 	}
 	public void setTitle(String title) {
@@ -434,5 +460,21 @@ public class SampleController implements Initializable {
 			adminDriver.findElement(By.tagName("body")).sendKeys(content);
 		}
 		adminDriver.switchTo().defaultContent();
+	}
+	public void parsing() throws IOException {
+		fileReader = new FileReader("src/list.csv");
+		reader = new BufferedReader(fileReader);
+		String line;
+		while((line = reader.readLine()) != null) {
+			String val = line.split(",")[0];
+			String level = line.split(",")[1];
+			switch (level) {
+			case "1" : list1.add(val);
+			case "2" : list2.add(val);
+			case "3" : list3.add(val);
+			case "4" : list4.add(val);
+			case "5" : list5.add(val);
+			}
+		}
 	}
 }
