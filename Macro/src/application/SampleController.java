@@ -1,7 +1,6 @@
 package application;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
@@ -9,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.ResourceBundle;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -46,15 +45,17 @@ public class SampleController implements Initializable {
 	@FXML private Button exit;
 	@FXML private Button login;
 	@FXML private TextArea ta;
-	private int current;
+	private int current, min, max, index;
 	private WebDriver adminDriver;
 	private WebDriver otherDriver;
 	private Dimension windowSize;
 	private final String postFront = "http://alltoto99.com/Service/Board/View.asp?BF_IDX=";	//IDX + postNumber
 	private final String postBack = "&page=1&db=freeboard";			//page = n --> n is reply page number
 	private org.openqa.selenium.Alert alert;
-	private SynchronousQueue<Writer> writeQueue = new SynchronousQueue<>();
+//	private SynchronousQueue<Writer> writeQueue = new SynchronousQueue<>();
+	private LinkedBlockingQueue<Writer> writeQueue = new LinkedBlockingQueue<>();
 	private static boolean flag = true;
+	private static boolean writeFlag = false;
 	private BufferedReader reader;
 	private FileReader fileReader;
 	private ArrayList<String> list1 = new ArrayList<>();
@@ -77,18 +78,18 @@ public class SampleController implements Initializable {
 	class gettingThread extends Thread {
 		@Override
 		public void run() {
-			int min = Integer.parseInt(copyMin.getText());
-			int max = Integer.parseInt(copyMax.getText());
 			while(true) {
 				System.out.println("실행상태" + flag);
-				for(current=min; current <=max && flag; current++) {
+				while(current <= max) {
 					movePage(current);
 					try {
 					writeQueue.put(getDetail());
 					} catch (NotFoundException | InterruptedException e) {
 						System.out.println("글이 없음");
-						continue;
 					}
+					current++;
+					if(current >max)
+						writeFlag = true;
 				} // 게시판 글 긁어오기 완료.
 			}
 		}
@@ -99,31 +100,56 @@ public class SampleController implements Initializable {
 		public void run() {
 			while(true) {
 				System.out.println("실행상태" + flag);
+				Writer writer = new Writer();
+				if(writeFlag) {
+					index = writeQueue.size();
+					for(int i = 0; i < index; i++ ) {
+							try {
+								writer = writeQueue.take();
+							} catch (InterruptedException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+						writeMain(writer);
+						try {
+							writeComment(writer);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+					writeFlag = false;
+				}
+			}
+		}
+/*		public void run() {
+			while(true) {
+				System.out.println("실행상태" + flag);
 				while(flag) {
 					Writer writer = writeQueue.poll();
-						if(writer == null)
-							continue;
-						else {
-							writeMain(writer);
-								try {
-									writeComment(writer);
-								} catch (InterruptedException e) {
-									e.printStackTrace();
-								}
+					if(writer == null)
+						continue;
+					else {
+						writeMain(writer);
+						try {
+							writeComment(writer);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
 						}
 					}
 				}
 			}
+		}
+*/		
 	}
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		try {
+	/*	try {
 			parsing();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
 		System.setProperty("webdriver.chrome.driver", "src/chromedriver.exe");
 		loadAdmin();
 		setAdminURL();
@@ -182,6 +208,9 @@ public class SampleController implements Initializable {
 	// to prevent blocking UI while run use Threads
 	public void start(ActionEvent e) throws InterruptedException {
 
+		min = Integer.parseInt(copyMin.getText());
+		max = Integer.parseInt(copyMax.getText());
+		current = min;
 		if(!t1.isAlive() && !t2.isAlive()) {
 			t1.start();
 			t2.start();
@@ -211,6 +240,7 @@ public class SampleController implements Initializable {
 	}
 	public void stop(ActionEvent e) throws InterruptedException {
 		suspending();
+		writeFlag=false;
 	}
 	public void exit(ActionEvent e) throws InterruptedException {
 		adminDriver.quit();
@@ -340,6 +370,7 @@ public class SampleController implements Initializable {
 			submit.click();
 		}
 		try {
+			Thread.sleep(200);
 		alert = adminDriver.switchTo().alert();
 		alert.accept();
 		} catch (Exception e) {
@@ -364,6 +395,7 @@ public class SampleController implements Initializable {
 		value = value.split("&")[0];
 		((JavascriptExecutor) adminDriver).executeScript("Javascript:BoardReplyWrite(" + value +")");
 		try {
+			Thread.sleep(200);
 			alert = adminDriver.switchTo().alert();
 			alert.accept();
 			} catch (Exception e) {
@@ -427,19 +459,22 @@ public class SampleController implements Initializable {
 		adminDriver.findElement(By.cssSelector("#b_writer"));
 		Random rand = new Random();
 		Select option = new Select(select);
-		String value = new String();
+		
+/*		String value = new String();
 		switch(level) {
 		case 1: value = list1.get(rand.nextInt(list1.size()));
 		case 2: value = list2.get(rand.nextInt(list2.size()));
 		case 3: value = list3.get(rand.nextInt(list3.size()));
 		case 4: value = list4.get(rand.nextInt(list4.size()));
 		case 5: value = list5.get(rand.nextInt(list5.size()));
-		}
+		}*/
 		try {
-				option.selectByValue(value);
+//				option.selectByValue(value);
+				option.selectByIndex(rand.nextInt(option.getOptions().size()-1)+1);
 		}catch (ElementNotSelectableException e) {
 			scrollIntoView(adminDriver, select);
-			option.selectByValue(value);
+//			option.selectByValue(value);
+			option.selectByIndex(rand.nextInt(option.getOptions().size()-1)+1);
 		}
 	}
 	public void setTitle(String title) {
