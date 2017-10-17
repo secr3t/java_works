@@ -49,7 +49,7 @@ public class SampleController implements Initializable {
 	private WebDriver adminDriver;
 	private WebDriver otherDriver;
 	private Dimension windowSize;
-	private final String postFront = "http://alltoto99.com/Service/Board/View.asp?BF_IDX=";	//IDX + postNumber
+	private final String postFront = "http://mhtt99.com/Service/Board/View.asp?BF_IDX=";	//IDX + postNumber
 	private final String postBack = "&page=1&db=freeboard";			//page = n --> n is reply page number
 	private org.openqa.selenium.Alert alert;
 //	private SynchronousQueue<Writer> writeQueue = new SynchronousQueue<>();
@@ -302,17 +302,26 @@ public class SampleController implements Initializable {
 		adminDriver.get("http://www.815asiabet.com/admin/index.php");
 	}
 	public void setOtherURL() {
-		otherDriver.get("http://alltoto99.com/Login.asp");
+		otherDriver.get("http://mhtt99.com/Login.asp");
 	}
 	public void movePage(int postNum) {
 		otherDriver.get(postFront+postNum+postBack);
 	}
 	
 	public void getLastNum() {
-		otherDriver.get("http://alltoto99.com/Service/Board/List.asp?db=freeboard");
-		String max =
-				otherDriver.findElement(By.cssSelector("#IHBoard > div.IHBoardList > div.totalcon > "
-						+ "div > ul > li:nth-child(14) > div > ul > li.titlebox_s_01 > div")).getText();
+		otherDriver.get("http://mhtt99.com/Service/Board/List.asp?db=freeboard");
+		String max = "00";
+		for(int i = 1; i < 30; i++) {
+		String temp = otherDriver.findElement(By.cssSelector("#IHBoard > div.IHBoardList > div.totalcon > "
+						+ "div > ul > li:nth-child("+i+") > div > ul > li.titlebox_s_01 > div")).getText();
+		try{
+			Integer.parseInt(temp);
+			} catch (NumberFormatException e) {
+				continue;
+			}
+			max = temp;
+			break;
+		}
 		copyMax.setText(max);
 	}
 	public Object runScript(WebDriver driver, String script, WebElement target) {
